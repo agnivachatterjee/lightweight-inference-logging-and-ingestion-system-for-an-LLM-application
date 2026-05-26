@@ -165,6 +165,10 @@ class Handler(SimpleHTTPRequestHandler):
             ingestion_sink=store_ingestion_event if os.getenv("VERCEL") else None,
         )
 
+        if os.getenv("VERCEL"):
+            self.handle_chat_buffered(conversation_id, provider, model, client, context)
+            return
+
         self.send_response(HTTPStatus.OK)
         self.send_header("Content-Type", "text/event-stream")
         self.send_header("Cache-Control", "no-cache")
@@ -206,6 +210,46 @@ class Handler(SimpleHTTPRequestHandler):
         data = f"event: {event}\ndata: {json.dumps(payload)}\n\n".encode("utf-8")
         self.wfile.write(data)
         self.wfile.flush()
+
+    def handle_chat_buffered(
+        self,
+        conversation_id: str,
+        provider: str,
+        model: str,
+        client: LLMClient,
+        context: list[dict[str, str]],
+    ) -> None:
+        events: list[bytes] = []
+        assistant_parts: list[str] = []
+
+        def add_event(name: str, payload: dict[str, Any]) -> None:
+            events.append(f"event: {name}\ndata: {json.dumps(payload)}\n\n".encode("utf-8"))
+
+        add_event("meta", {"conversation_id": conversation_id, "provider": provider, "model": model})
+        try:
+            result = client.stream_chat(conversation_id, context, cancel_check=lambda: False)
+            for chunk in result.chunks:
+                assistant_parts.append(chunk)
+                add_event("token", {"text": chunk})
+            assistant_text = "".join(assistant_parts).strip()
+            if assistant_text:
+                DB.add_message(str(uuid.uuid4()), conversation_id, "assistant", assistant_text, {"status": "done"})
+            add_event("done", {"conversation_id": conversation_id})
+        except ProviderError as exc:
+            add_event("failure", {"error": str(exc)})
+        except Exception as exc:
+            add_event("failure", {"error": str(exc)})
+
+        body = b"".join(events)
+        self.send_response(HTTPStatus.OK)
+        self.send_header("Content-Type", "text/event-stream")
+        self.send_header("Cache-Control", "no-cache")
+        self.send_header("Connection", "close")
+        self.send_header("Content-Length", str(len(body)))
+        self.end_headers()
+        self.wfile.write(body)
+        self.wfile.flush()
+        self.close_connection = True
 
 
 def store_ingestion_event(event: dict[str, Any]) -> None:
