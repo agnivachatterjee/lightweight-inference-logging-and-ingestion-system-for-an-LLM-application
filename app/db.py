@@ -269,4 +269,5 @@ class Database:
 
 
 def from_env() -> Database:
-    return Database(os.getenv("DATABASE_PATH", "data/app.db"))
+    default_path = "/tmp/app.db" if os.getenv("VERCEL") else "data/app.db"
+    return Database(os.getenv("DATABASE_PATH", default_path))

@@ -21,6 +21,8 @@ STATIC_ROOT = ROOT / "static"
 
 
 def load_dotenv() -> None:
+    if os.getenv("VERCEL"):
+        return
     env_path = ROOT.parent / ".env"
     if not env_path.exists():
         return
@@ -155,8 +157,13 @@ class Handler(SimpleHTTPRequestHandler):
         context = [{"role": "system", "content": "You are a concise, helpful assistant."}]
         context.extend({"role": row["role"], "content": row["content"]} for row in DB.get_messages(conversation_id, limit=10))
 
-        base_url = f"http://127.0.0.1:{self.server.server_port}"
-        client = LLMClient(provider, model, f"{base_url}/api/ingest/inference")
+        base_url = "" if os.getenv("VERCEL") else f"http://127.0.0.1:{self.server.server_port}"
+        client = LLMClient(
+            provider,
+            model,
+            f"{base_url}/api/ingest/inference",
+            ingestion_sink=store_ingestion_event if os.getenv("VERCEL") else None,
+        )
 
         self.send_response(HTTPStatus.OK)
         self.send_header("Content-Type", "text/event-stream")
@@ -199,6 +206,12 @@ class Handler(SimpleHTTPRequestHandler):
         data = f"event: {event}\ndata: {json.dumps(payload)}\n\n".encode("utf-8")
         self.wfile.write(data)
         self.wfile.flush()
+
+
+def store_ingestion_event(event: dict[str, Any]) -> None:
+    normalized = validate_inference_event(event)
+    extracted = extract_metadata(normalized)
+    DB.store_inference_log(normalized, extracted)
 
 
 def main() -> None:

@@ -28,6 +28,24 @@ Open [http://localhost:8080](http://localhost:8080).
 
 Without API keys, the app uses `mock`, which streams a local response and still exercises the logging and ingestion pipeline.
 
+## Deploy On Vercel
+
+This repository includes `api/index.py` and `vercel.json` for Vercel Python Functions.
+
+1. Push the repo to GitHub.
+2. Import the repo in Vercel.
+3. Add these environment variables in Vercel Project Settings:
+
+```bash
+LLM_PROVIDER=gemini
+LLM_MODEL=gemini-2.5-flash
+GEMINI_API_KEY=your_key_here
+```
+
+4. Deploy.
+
+Vercel demo note: by default the app uses SQLite at `/tmp/app.db` on Vercel. That is fine for a live demo, but it is ephemeral serverless storage. For durable hosted logs, replace SQLite with Postgres, Neon, Supabase, or Vercel Postgres.
+
 ## Local Python Run
 
 ```bash

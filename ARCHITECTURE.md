@@ -46,6 +46,7 @@ The current delivery mode is near-real-time best effort. It intentionally does n
 For higher traffic:
 
 - Move from SQLite to Postgres.
+- On Vercel, use managed Postgres/Neon/Supabase/Vercel Postgres instead of the default `/tmp` SQLite demo database.
 - Add a queue or log stream between SDKs and ingestion.
 - Split chat and ingestion into independent services.
 - Use an outbox pattern for guaranteed event delivery.

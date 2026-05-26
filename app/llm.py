@@ -27,11 +27,19 @@ class ProviderError(Exception):
 
 
 class LLMClient:
-    def __init__(self, provider: str, model: str, ingestion_url: str, timeout_seconds: int = 60):
+    def __init__(
+        self,
+        provider: str,
+        model: str,
+        ingestion_url: str = "",
+        timeout_seconds: int = 60,
+        ingestion_sink: Callable[[dict[str, Any]], None] | None = None,
+    ):
         self.provider = provider
         self.model = model
         self.ingestion_url = ingestion_url
         self.timeout_seconds = timeout_seconds
+        self.ingestion_sink = ingestion_sink
 
     def stream_chat(
         self,
@@ -214,6 +222,14 @@ class LLMClient:
                     yield delta["content"]
 
     def _send_ingestion_async(self, event: dict[str, Any]) -> None:
+        if self.ingestion_sink:
+            self.ingestion_sink(event)
+            return
+
+        if not self.ingestion_url:
+            print(f"ingestion delivery skipped for {event['event_id']}: no ingestion URL", flush=True)
+            return
+
         def send() -> None:
             try:
                 req = urllib.request.Request(
