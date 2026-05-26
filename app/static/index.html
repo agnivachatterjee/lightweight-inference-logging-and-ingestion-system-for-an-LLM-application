@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Inference Logger Chat</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <aside class="sidebar">
+      <div class="brand">
+        <span class="mark">IL</span>
+        <div>
+          <strong>Inference Logger</strong>
+          <small>Chat + ingestion demo</small>
+        </div>
+      </div>
+      <button id="newConversation" class="primary">New chat</button>
+      <nav class="tabs" aria-label="Views">
+        <button class="tab active" data-view="chatView">Chat</button>
+        <button class="tab" data-view="dashboardView">Dashboard</button>
+      </nav>
+      <div class="sidebar-title">Conversations</div>
+      <div id="conversationList" class="conversation-list"></div>
+    </aside>
+
+    <main>
+      <section id="chatView" class="view active">
+        <header class="topbar">
+          <div>
+            <h1 id="conversationTitle">New conversation</h1>
+            <p id="modelMeta">mock / mock-small</p>
+          </div>
+          <button id="cancelConversation" class="danger" disabled>Cancel</button>
+        </header>
+
+        <div id="messages" class="messages" aria-live="polite"></div>
+
+        <form id="chatForm" class="composer">
+          <textarea id="messageInput" rows="2" placeholder="Ask something..." required></textarea>
+          <button id="sendButton" type="submit">Send</button>
+        </form>
+      </section>
+
+      <section id="dashboardView" class="view">
+        <header class="topbar">
+          <div>
+            <h1>Dashboards</h1>
+            <p>Latency, throughput, errors, and recent inference events</p>
+          </div>
+          <button id="refreshDashboard">Refresh</button>
+        </header>
+        <div class="metrics">
+          <div class="metric"><span>Requests</span><strong id="metricRequests">0</strong></div>
+          <div class="metric"><span>Avg latency</span><strong id="metricLatency">0 ms</strong></div>
+          <div class="metric"><span>Errors</span><strong id="metricErrors">0</strong></div>
+          <div class="metric"><span>Total tokens</span><strong id="metricTokens">0</strong></div>
+        </div>
+        <div class="dashboard-grid">
+          <section class="panel">
+            <h2>Provider performance</h2>
+            <div id="providerTable" class="table"></div>
+          </section>
+          <section class="panel">
+            <h2>Throughput</h2>
+            <div id="throughputBars" class="bars"></div>
+          </section>
+        </div>
+        <section class="panel">
+          <h2>Recent logs</h2>
+          <div id="recentLogs" class="table"></div>
+        </section>
+      </section>
+    </main>
+
+    <script src="/app.js"></script>
+  </body>
+</html>

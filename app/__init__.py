@@ -1,0 +1,1 @@
+"""Lightweight inference logging demo."""
